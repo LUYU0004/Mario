@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Emotiv;
 using UnityEngine;
-using System.Reflection;
-using System.Runtime.InteropServices;
 //using computeAttention;
 
 
@@ -28,6 +26,7 @@ public class EEGLogger {
     private double threshold;
     private double BTconcentrationLevel;
     private static float startTime;
+    private static bool testMode = false;
 
 
     // Use this for initialization
@@ -80,7 +79,11 @@ public class EEGLogger {
         float attentionSc = -1;
         int attentionLv = -1;
 
-        string dataLocation = "E:\\luyuhao\\VS_Unity\\Project\\testdata\\" + DateTime.Now.ToString(@"MM\/dd\/yyyy_HH:mm") + ".txt";
+        string root_path= Environment.CurrentDirectory;
+        string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
+        Debug.Log(root_path);
+        Debug.Log(path);
+        string dataLocation = path+"\\" + DateTime.Now.ToString(@"MM\/dd\/yyyy_HH:mm") + ".txt";
         file = new StreamWriter(dataLocation, true);
         try
         {
@@ -92,24 +95,39 @@ public class EEGLogger {
         while (true)
         {
             Thread.Sleep(250);
-           
-            if (userID > 0) {
 
-                if (logger.Run())
+            if (testMode) {
+                file = new StreamWriter(dataLocation, true);
+                logger.readCount++;
+                attentionSc = (float)logger.generateFakeAttention(); //0-100
+                attentionLv = logger.CalAttensionLevel(); ;
+                Player.attentionScore = attentionSc;
+                Player.attentionLvl = attentionLv;
+
+                file.WriteLine(attentionSc + ",  " + attentionLv);
+                file.Close();
+
+            } else {
+                if (userID > 0)
                 {
-                    file = new StreamWriter(dataLocation, true);
-                    logger.readCount++;
-                    logger.TimeToFrq32();
-                    attentionSc = (float)logger.CalculateAttention();
-                    attentionLv = logger.CalAttensionLevel(); ;
-                    Player.attentionScore = attentionSc;
-                    Player.attentionLvl = attentionLv;
 
-                    file.WriteLine(attentionSc + ",  " + attentionLv);
-                    file.Close();
-                    //TODO: Update UI display
+                    if (logger.Run())
+                    {
+                        file = new StreamWriter(dataLocation, true);
+                        logger.readCount++;
+                        logger.TimeToFrq32();
+                        attentionSc = (float)logger.CalculateAttention();
+                        attentionLv = logger.CalAttensionLevel(); ;
+                        Player.attentionScore = attentionSc;
+                        Player.attentionLvl = attentionLv;
+
+                        file.WriteLine(attentionSc + ",  " + attentionLv);
+                        file.Close();
+                        //TODO: Update UI display
+                    }
                 }
-            }    
+            }
+            
         }
         
     }
@@ -173,9 +191,14 @@ public class EEGLogger {
         return true;
     }
 
+    private int generateFakeAttention() {
+        System.Random rnd = new System.Random();
+        int result = rnd.Next(0, 100);
+        return result;
+    }
     private void setThresholds() {
 
-        int counter;
+        /*int counter;
 
         for (counter = 0; counter < 127; counter++) {
             if (Run())
@@ -200,7 +223,11 @@ public class EEGLogger {
             threshold = threshold / 128;
             Console.WriteLine("threshold for focus = " + threshold);
         
-        threshold = threshold + (thresholdR - threshold) * (1 / 3);
+        threshold = threshold + (thresholdR - threshold) * (1 / 3);*/
+
+        //create fake threshold 
+        threshold = 80;
+        thresholdR = 50;
     }
 
     private double CalculateAttention()
@@ -348,7 +375,7 @@ public class EEGLogger {
     {
         if (BTconcentrationLevel < threshold)
         {
-            return 5;
+            return 1;
         }
         else if (BTconcentrationLevel < thresholdR && BTconcentrationLevel > threshold)
         {
@@ -356,7 +383,7 @@ public class EEGLogger {
         }
         else
         {
-            return 1;
+            return 3;
         }
     }
 
