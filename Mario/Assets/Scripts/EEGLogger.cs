@@ -68,7 +68,6 @@ public class EEGLogger {
 
     public static void OnRetrieveData() {
 
-        startTime = Time.time;
 
         Debug.Log("OnRetrieveData Thread Created!");
         
@@ -81,45 +80,36 @@ public class EEGLogger {
         float attentionSc = -1;
         int attentionLv = -1;
 
-        int counter = 10;
-        while (counter>0)
+        string dataLocation = "E:\\luyuhao\\VS_Unity\\Project\\testdata\\" + DateTime.Now.ToString(@"MM\/dd\/yyyy_HH:mm") + ".txt";
+        file = new StreamWriter(dataLocation, true);
+        try
         {
-            counter--;
+            file.WriteLine("AttentionScore , AttentionLevel ");
+        }
+        catch (Exception e) { Debug.Log("problem writing attention data!"); }
+        file.Close();
 
-            var recordTime = Time.time - startTime;
-            int minutes = (int)recordTime / 60;
-            int seconds = (int)recordTime % 60;
-            int fraction = (int)(recordTime * 100) % 100;
-
-
-            string timeString = string.Format("{0:00}:{1:00}:{2:000}", minutes, seconds, fraction);
-            Debug.Log("loop! "+timeString);
-            if (userID < 0) continue; 
-            
-            file = new StreamWriter("E:\\luyuhao\\testdata\\" + DateTime.Now.ToString("ddMMyyyy") + ".csv", true);
-
-            try
-            {
-                file.WriteLine("AttentionScore , AttentionLevel ");
-            }
-            catch (Exception e) { Debug.Log("problem writing attention data!"); }
-
-            if (logger.Run()) {
-                Debug.Log("log data!");
-                logger.readCount++;
-                logger.TimeToFrq32();
-                attentionSc = (float)logger.CalculateAttention();
-                attentionLv = logger.CalAttensionLevel(); ;
-                Player.attentionScore = attentionSc;
-                Player.attentionLvl = attentionLv;
-
-                file.WriteLine(attentionSc + ",  "+attentionLv);
-                
-                //TODO: Update UI display
-            }
-
-
+        while (true)
+        {
             Thread.Sleep(250);
+           
+            if (userID > 0) {
+
+                if (logger.Run())
+                {
+                    file = new StreamWriter(dataLocation, true);
+                    logger.readCount++;
+                    logger.TimeToFrq32();
+                    attentionSc = (float)logger.CalculateAttention();
+                    attentionLv = logger.CalAttensionLevel(); ;
+                    Player.attentionScore = attentionSc;
+                    Player.attentionLvl = attentionLv;
+
+                    file.WriteLine(attentionSc + ",  " + attentionLv);
+                    file.Close();
+                    //TODO: Update UI display
+                }
+            }    
         }
         
     }

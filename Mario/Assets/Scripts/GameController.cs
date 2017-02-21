@@ -60,6 +60,8 @@ public class GameController : MonoBehaviour {
         EEGThread = new Thread(EEGLogger.OnRetrieveData);
         gameMode = 5;
         EEGThread.Start();
+
+       
     }
 
     void UpdateScore() {
