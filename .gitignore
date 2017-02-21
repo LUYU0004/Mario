@@ -1,0 +1,35 @@
+# =============== #
+# Unity generated #
+# =============== #
+Mario/Temp/
+Mario/Obj/
+Mario/UnityGenerated/
+Mario/Library/
+Mario/Assets/AssetStoreTools*
+#git rm -r --cached C\Us....
+#git update-index --assume-unchanged C\....
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+Mario/ExportedObj/
+*.svd
+*.userprefs
+*.csproj
+*.pidb
+*.suo
+*.sln
+*.user
+*.unityproj
+*.booproj
+
+# ============ #
+# OS generated #
+# ============ #
+Mario/.DS_Store
+Mario/.DS_Store?
+Mario/._*
+Mario/.Spotlight-V100
+Mario/.Trashes
+Mario/Icon?
+Mario/ehthumbs.db
+Mario/Thumbs.db

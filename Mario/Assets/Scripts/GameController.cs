@@ -1,0 +1,95 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+
+using System.Threading;
+using UnityEngine;
+public class GameController : MonoBehaviour {
+
+    private UnityEngine.UI.Text scoreText;
+    private enum GameModes : byte { pre = 1, relax, attentionLow, attentionHigh, gamePlaying};
+    private int gameMode = 0;
+    private int score;
+    private float startTime;
+    public string textTime; //added this member variable here so we can access it through other scripts
+
+    EEGLogger logger;
+    Thread EEGThread; //constant running thread to read eeg data
+    Player player;
+
+    void Awake() {
+    }
+
+    void OnGUI()
+    {
+        var guiTime = Time.time - startTime;
+
+
+        int minutes= (int)guiTime / 60;
+        int seconds = (int)guiTime % 60;
+        int fraction = (int)(guiTime * 100) % 100;
+
+
+        textTime = string.Format("{0:00}:{1:00}:{2:000}", minutes, seconds, fraction);
+        GUI.Label(new Rect(400, 25, 100, 30), textTime); //changed variable name to textTime -->text is not a good variable name since it has other use already
+
+
+    }
+
+    void Start() {
+
+        player = GetComponent<Player>();
+
+        //reset score
+        score = 0;
+        startTime = Time.time;
+
+        GameObject[] scoreTextObjects = GameObject.FindGameObjectsWithTag("scoreText");
+        if (scoreTextObjects != null)
+        {
+            scoreText = scoreTextObjects[0].GetComponent<UnityEngine.UI.Text>();
+        }
+
+        if (scoreText == null)
+        {
+            Debug.Log("Can not find 'scoreText' script");
+        }
+
+        UpdateScore();
+
+        //create a constantly working eeg signal thread
+        EEGThread = new Thread(EEGLogger.OnRetrieveData);
+        gameMode = 5;
+        EEGThread.Start();
+    }
+
+    void UpdateScore() {
+        scoreText.text = "Score: " + score;
+    }
+
+    public void AddScore(int newScoreValue) {
+        score += newScoreValue;
+        UpdateScore();
+    }
+
+    void OnApplicationQuit()
+    {
+        //EEGThread.Abort();
+        //EEGThread.Abort();
+    }
+
+    /*
+     * private scoreValue = 10;
+     * private GameController gameController; 
+    //...start(){
+    GameObject gameControllerObject = GameObject.FindingWithTag("GameController");
+    if(gameControllerObject != null){
+    gameController = gameControllerObject.GetComponent<GameController>();}
+    
+    if(gameController==null){
+    Debug.Log("Can not find 'GmaeController' script");
+    }
+    onTriggerEnter(){...
+    gameController.AddScore(scoreValue);
+    */
+
+}

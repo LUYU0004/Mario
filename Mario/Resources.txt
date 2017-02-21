@@ -1,0 +1,4 @@
+dll dependent:
+1)https://forum.unity3d.com/threads/dllnotfoundexception-when-depend-on-another-dll.31083/
+2)https://docs.unity3d.com/Manual/PluginInspector.html
+3)http://answers.unity3d.com/questions/439376/dllnotfoundexception-multiple-c-and-c-dlls.html
