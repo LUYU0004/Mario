@@ -17,6 +17,8 @@ public class CharacterController2D : MonoBehaviour {
     public ControllerState2D State { get; private set; }
     public Vector2 Velocity { get { return _velocity; } }//make it not modifiable outside
     private Vector2 _velocity;
+    public Vector3 PlatformVelocity { get; private set; }
+
     public bool CanJump {
         get {
             if (Parameters.JumpRestrictions == ControllerParameters2D.JumpBehavior.CanJumpAnywhere)
@@ -34,6 +36,11 @@ public class CharacterController2D : MonoBehaviour {
     private BoxCollider2D _boxCollider;
     private ControllerParameters2D _overrideParameters;
     private float _jumpIn; //record the timelapse for the last jump, constraint by the jump freq
+    private GameObject _lastStandingOn;
+    private Vector3
+        _activeGlobalPlatformPoint,
+        _activeLocalPlatformPoint;
+
     private Vector3
         _raycastTopLeft,
         _raycastBottomLeft,
@@ -105,12 +112,15 @@ public class CharacterController2D : MonoBehaviour {
                 MoveHorizontally(ref deltaMovement);
 
             MoveVertically(ref deltaMovement);
+
+            CorrectHorizontalPlacement(ref deltaMovement, true);
+            CorrectHorizontalPlacement(ref deltaMovement, false);
         }
 
      
         _transform.Translate(deltaMovement, Space.World);
 
-        //TODO: Additional moving platform code
+       
 
         if (Time.deltaTime > 0)
             _velocity = deltaMovement / Time.deltaTime;
@@ -120,9 +130,80 @@ public class CharacterController2D : MonoBehaviour {
 
         if (State.IsMovingUpSlope)
             _velocity.y = 0;
+
+        //Additional moving platform code
+
+        if (StandingOn != null)
+        {
+            _activeGlobalPlatformPoint = transform.position;
+            _activeLocalPlatformPoint = StandingOn.transform.InverseTransformPoint(transform.position);//relative position to the platform
+
+            Debug.DrawLine(transform.position, _activeGlobalPlatformPoint);
+            Debug.DrawLine(transform.position, _activeLocalPlatformPoint);
+
+            if (_lastStandingOn != StandingOn)
+            {//stand on dif object
+                if (_lastStandingOn != null)
+                    _lastStandingOn.SendMessage("ControllerExit2D", this, SendMessageOptions.DontRequireReceiver);
+
+                StandingOn.SendMessage("ControllerEnter2D", this, SendMessageOptions.DontRequireReceiver);
+                _lastStandingOn = StandingOn;
+            }else if (StandingOn != null)
+            {
+                StandingOn.SendMessage("ControllerStay2D", this, SendMessageOptions.DontRequireReceiver);
+            }
+        }else if (_lastStandingOn != null) {
+            //previously standing on sth
+            _lastStandingOn.SendMessage("ControllerExit2D", this, SendMessageOptions.DontRequireReceiver);
+            _lastStandingOn = null;
+        }
+
+
     }
 
-    private void HandlePlatforms() { }
+    private void HandlePlatforms() {
+        if (StandingOn != null)
+        {
+            var newGlobalPlatformPoint = StandingOn.transform.TransformPoint(_activeLocalPlatformPoint);
+            var moveDistance = newGlobalPlatformPoint - _activeGlobalPlatformPoint;
+
+            if (moveDistance != Vector3.zero)
+            {
+                transform.Translate(moveDistance, Space.World);
+            }
+
+            PlatformVelocity = (newGlobalPlatformPoint - _activeGlobalPlatformPoint) / Time.deltaTime; // 
+        }
+        else {
+            PlatformVelocity = Vector3.zero;
+        }
+
+        StandingOn = null;
+    }
+
+    private void CorrectHorizontalPlacement(ref Vector2 deltaMovement, bool isRight) {
+        var halfWidth = (_boxCollider.size.x * _localScale.x) / 2f;
+        var rayOrigin = isRight ? _raycastBottomRight : _raycastBottomLeft;
+
+        if (isRight)
+            rayOrigin.x -= (halfWidth - SkinWidth);
+        else
+            rayOrigin.x += (halfWidth - SkinWidth);
+
+        var rayDirection = isRight ? Vector2.right : -Vector2.right;
+        var offset = 0f;
+
+        for (var i = 1; i < TotalHorizontalRays; i++) {
+            var rayVector = new Vector2(deltaMovement.x+ rayOrigin.x, deltaMovement.y + rayOrigin.y + (i * _verticalDistanceBetweenRays));
+            Debug.DrawRay(rayVector, rayDirection * halfWidth, isRight ? Color.cyan : Color.magenta);
+
+            var raycastHit = Physics2D.Raycast(rayVector, rayDirection, halfWidth, PlatformMask);
+            if (!raycastHit)
+                continue;
+
+            offset = isRight ? ((raycastHit.point.x - _transform.position.x) - halfWidth) : (halfWidth - (_transform.position.x - raycastHit.point.x));
+        } 
+    }
 
     private void CalculateRaysOrigins() {
 
@@ -270,8 +351,23 @@ public class CharacterController2D : MonoBehaviour {
     }
 
 
-    //handles the situation where the ControllerParameters2D need to be overrided, in dif volumes
-    public void OnTriggerEnter2D(Collider2D other) { }
+    /*handles the situation where the ControllerParameters2D need to be overrided, in dif volumes*/
+    public void OnTriggerEnter2D(Collider2D other) {
+        // if enter a new object has ControllerPhysicsVolume2D attached to it, then overwrite the parameters
 
-    public void OnTriggerExit2D(Collider2D other) { }
+        var parameters = other.gameObject.GetComponent<ControllerPhysicsVolume2D>();
+        if (parameters == null)
+            return;
+
+        _overrideParameters = parameters.Parameters;
+        
+    }
+
+    public void OnTriggerExit2D(Collider2D other) {
+        var parameters = other.gameObject.GetComponent<ControllerPhysicsVolume2D>();
+        if (parameters == null)
+            return;
+
+        _overrideParameters = null;
+    }
 }
