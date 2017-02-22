@@ -47,15 +47,16 @@ public class CharacterController2D : MonoBehaviour {
     public void Awake() {
         HandleCollisions = true;
         State = new global::ControllerState2D();
-        _transform = transform;
+
+        _transform = transform; // keep a local copy for faster perf
         _localScale = transform.localScale;
         _boxCollider = GetComponent<BoxCollider2D>();
 
         var colliderWidth = _boxCollider.size.x * Mathf.Abs(transform.localScale.x) - (2 * SkinWidth);
-        _horizontalDistanceBetweenRays = colliderWidth / (TotalHorizontalRays - 1);
+        _horizontalDistanceBetweenRays = colliderWidth / (TotalVerticalRays - 1);
 
         var colliderHeight = _boxCollider.size.y * Mathf.Abs(transform.localScale.y) - (2 * SkinWidth);
-        _verticalDistanceBetweenRays = colliderHeight / (TotalVerticalRays - 1);
+        _verticalDistanceBetweenRays = colliderHeight / (TotalHorizontalRays - 1);
 
     }
     public void AddForce(Vector2 force) {
@@ -201,7 +202,7 @@ public class CharacterController2D : MonoBehaviour {
                 }
             }
 
-            deltaMovement.y = raycastHit.point.y - rayVector.y;
+            deltaMovement.y = raycastHit.point.y - rayVector.y; //not hit anything
             rayDistance = Mathf.Abs(deltaMovement.y);
 
             if (isGoingUp)
@@ -211,7 +212,7 @@ public class CharacterController2D : MonoBehaviour {
             }
             else {
                 deltaMovement.y += SkinWidth;
-                State.IsCollidingBelow = true;
+                State.IsCollidingBelow = true; //on ground
             }
 
             if (!isGoingUp && deltaMovement.y > .0001f)
@@ -222,10 +223,50 @@ public class CharacterController2D : MonoBehaviour {
         }
     }
 
-    private void HandleVerticalSlope(ref Vector2 deltaMovement) { }
+    private void HandleVerticalSlope(ref Vector2 deltaMovement) {
+        var center = (_raycastBottomLeft.x + _raycastBottomRight.x) / 2;
+        var direction = -Vector2.up;
+
+        var slopeDistance = SlopeLimitTangent * (_raycastBottomRight.x - center);
+        var slopeRayVector = new Vector2(center, _raycastBottomLeft.y);
+
+        Debug.DrawRay(slopeRayVector, direction * slopeDistance, Color.yellow);
+        var raycastHit = Physics2D.Raycast(slopeRayVector, direction, slopeDistance, PlatformMask);
+        if (!raycastHit)
+            return;
+
+        var isMovingDownSlope = Mathf.Sign(raycastHit.normal.x) == Mathf.Sign(deltaMovement.x);
+        if (!isMovingDownSlope)
+            return;
+
+        var angle = Vector2.Angle(raycastHit.normal, Vector2.up);
+        if (Mathf.Abs(angle) < .0001f)
+            return;
+
+        State.IsMovingDownSlope = true;
+        State.SlopeAngle = angle;
+        deltaMovement.y = raycastHit.point.y - slopeRayVector.y;
+
+    }
 
     private bool HandleHorizontalSlope(ref Vector2 deltaMovement, float angle, bool isGoingRight) {
-        return false;
+        if (Mathf.RoundToInt(angle) == 90)
+            return false;
+
+        if (angle > Parameters.SlopeLimit) { //too steep
+            deltaMovement.x = 0;
+            return true;
+        }
+
+        if (deltaMovement.y > .07f)
+            return true;
+
+        deltaMovement.x += isGoingRight ? -SkinWidth : SkinWidth;
+        deltaMovement.y += Mathf.Abs(Mathf.Tan(angle * Mathf.Deg2Rad) * deltaMovement.x);
+        State.IsMovingUpSlope = true;
+        State.IsCollidingBelow = true;
+        return true;
+
     }
 
 

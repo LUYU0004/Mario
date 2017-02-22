@@ -18,7 +18,7 @@ public class EEGLogger {
     
         //(assemblies);
     private static int userID = -1;    
-    private string outputDataFile =  "E:\\luyuhao\\testdata\\RawSignals" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private string outputDataFile =  "E:\\luyuhao\\testdata\\RawSignals\\" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
     private static int bufferSizeLimit = 64;
     private double[][] rawSignals = new double[4][];
 
@@ -26,7 +26,7 @@ public class EEGLogger {
     private double threshold;
     private double BTconcentrationLevel;
     private static float startTime;
-    private static bool testMode = false;
+    private static bool testMode = true;
 
 
     // Use this for initialization
@@ -80,16 +80,19 @@ public class EEGLogger {
 
         string root_path= Environment.CurrentDirectory;
         string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
-        Debug.Log(root_path);
-        Debug.Log(path);
-        string dataLocation = path+"\\" + DateTime.Now.ToString(@"MM\/dd\/yyyy_HH:mm") + ".txt";
-        file = new StreamWriter(dataLocation, true);
+        string dataLocation = path+ "\\testdata\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".txt";
+        
         try
         {
+            file = new StreamWriter(dataLocation, true);
             file.WriteLine("AttentionScore , AttentionLevel ");
+            file.Close();
         }
-        catch (Exception e) { Debug.Log("problem writing attention data!"); }
-        file.Close();
+        catch (Exception e) {
+            Debug.Log("problem writing attention data!");
+            Debug.Log(e);
+        }
+        
 
         while (true)
         {
@@ -99,10 +102,10 @@ public class EEGLogger {
                 file = new StreamWriter(dataLocation, true);
                 logger.readCount++;
                 attentionSc = (float)logger.generateFakeAttention(); //0-100
-                attentionLv = logger.CalAttensionLevel(); ;
+                attentionLv = logger.CalAttensionLevel(attentionSc); ;
                 Player.attentionScore = attentionSc;
                 Player.attentionLvl = attentionLv;
-
+                Player.UpdateHorizontalSpeed();
                 file.WriteLine(attentionSc + ",  " + attentionLv);
                 file.Close();
 
@@ -116,7 +119,7 @@ public class EEGLogger {
                         logger.readCount++;
                         logger.TimeToFrq32();
                         attentionSc = (float)logger.CalculateAttention();
-                        attentionLv = logger.CalAttensionLevel(); ;
+                        attentionLv = logger.CalAttensionLevel(attentionSc); ;
                         Player.attentionScore = attentionSc;
                         Player.attentionLvl = attentionLv;
 
@@ -229,7 +232,7 @@ public class EEGLogger {
         thresholdR = 50;
     }
 
-    private double CalculateAttention()
+    private float CalculateAttention()
     {
         // int Fs = 128;
         // int N = 64;
@@ -259,9 +262,10 @@ public class EEGLogger {
 
         beta = beta / 4;
         // concentrationLevel in dB
-        BTconcentrationLevel = 20 * Math.Log(theta / beta);
-        return BTconcentrationLevel;
+        float attentionScore = (float)(20 * Math.Log(theta / beta));
+        return attentionScore;
     }
+
     private double[] ComputeAttentionScore(int bufferSize, double[,] data) {
         //TODO: use matlab code to compute attention scores
 
@@ -314,7 +318,7 @@ public class EEGLogger {
         TimeToFrq32();
         results[0] = CalculateAttention();
         //file.WriteLine("A: " + x + ",");
-        results[1] = CalAttensionLevel();
+        //results[1] = CalAttensionLevel();
         //file.WriteLine("S: " + strength + ",");
         //Console.WriteLine("compute Attention SCORES!");
         return results;
@@ -370,13 +374,13 @@ public class EEGLogger {
         }
     }
 
-    private int CalAttensionLevel()
+    private int CalAttensionLevel(float attentionScores)
     {
-        if (BTconcentrationLevel < threshold)
+        if (attentionScores < thresholdR)
         {
             return 1;
         }
-        else if (BTconcentrationLevel < thresholdR && BTconcentrationLevel > threshold)
+        else if (attentionScores < threshold && attentionScores > thresholdR)
         {
             return 2;
         }

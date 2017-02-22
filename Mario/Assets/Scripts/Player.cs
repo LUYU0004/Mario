@@ -11,8 +11,8 @@ public class Player : MonoBehaviour {
     public static float attentionLvl;
     private float threshold;
     private float thresholdR;
-    private float CurrentSpeed;
-    private float MaxSpeed = 8;
+    public static float CurrentSpeed;
+    public static float MaxSpeed = 8;
     public float SpeedAccelerationOnGround = 10f;
     public float SpeedAccelerationInAir = 5f;
     private float _normalizedHorizontalSpeed;  //1 for moving right, -1 for moving left, 0 stops
@@ -26,29 +26,31 @@ public class Player : MonoBehaviour {
         thresholdR = 1;
         attentionScore = 0;
         attentionLvl = 0;
+        _normalizedHorizontalSpeed = 1;
     }
 
-    private void UpdateHorizontalSpeed() {
-        int threshold = 100;
+    public static void UpdateHorizontalSpeed() {
+        int threshold = 3;
 
         /*if (attentionScore > 100) {
             attentionScore = 100;
         }*/
 
-        CurrentSpeed = attentionScore / threshold * MaxSpeed;
+        CurrentSpeed = attentionLvl / threshold * MaxSpeed;
+       // Debug.Log("Current Speed = " + CurrentSpeed);
     }
 
 
     public void Update() {
 
         HandleInput();  //so that input is handled only when the player is alive
-        UpdateHorizontalSpeed();
 
         var movementFactor = _controller.State.IsGrounded ? SpeedAccelerationOnGround : SpeedAccelerationInAir;
 
         //lerp(cur_velocity, target_velocity, time)
-      
+        //print("Velocity.x = " + _controller.Velocity.x + "_normalizedHorizontalSpeed * CurrentSpeed"+ _normalizedHorizontalSpeed * CurrentSpeed);
         var horizontalForce = Mathf.Lerp(_controller.Velocity.x, _normalizedHorizontalSpeed * CurrentSpeed, Time.deltaTime * movementFactor);
+        //print("horizontalForce = " + horizontalForce);
         _controller.SetHorizontalForce(horizontalForce);
     }
 
@@ -66,9 +68,9 @@ public class Player : MonoBehaviour {
             if (_isFacingRight)
                 Flip();
         }
-        else {
-            _normalizedHorizontalSpeed = 0; 
-        }
+        /*else {
+            _normalizedHorizontalSpeed = 1; 
+        }*/
 
         if (_controller.CanJump && Input.GetKeyDown(KeyCode.Space)) {
             _controller.Jump();

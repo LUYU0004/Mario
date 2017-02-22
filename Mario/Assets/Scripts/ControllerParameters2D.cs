@@ -21,7 +21,7 @@ public class ControllerParameters2D {
 
     public JumpBehavior JumpRestrictions;
 
-    public float JumpFrequency = .25f;
+    public float JumpFrequency = .10f;
     //public fields -- able to change within unity inspect windows
 
     public float JumpMagnitude = 12;// the amt added to upside velocity if jump is performed

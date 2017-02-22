@@ -30,7 +30,7 @@ public class ControllerState2D {
     public override string ToString()
     {
         return string.Format(
-            "(controller: r:{0} l:{1} a{2} b{3} down-slope:{4} up-slope:{5} angle:{6})",
+            "(controller: r:{0} l:{1} a:{2} b:{3} down-slope:{4} up-slope:{5} angle:{6})",
             IsCollidingRight,
             IsCollidingLeft,
             IsCollidingAbove,
