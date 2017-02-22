@@ -67,7 +67,6 @@ public class EEGLogger {
 
     public static void OnRetrieveData() {
 
-
         Debug.Log("OnRetrieveData Thread Created!");
         
         EEGLogger logger = new EEGLogger();

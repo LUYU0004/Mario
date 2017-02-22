@@ -12,6 +12,7 @@ public class Player : MonoBehaviour {
     private float threshold;
     private float thresholdR;
     private float CurrentSpeed;
+    private float MaxSpeed = 8;
     public float SpeedAccelerationOnGround = 10f;
     public float SpeedAccelerationInAir = 5f;
     private float _normalizedHorizontalSpeed;  //1 for moving right, -1 for moving left, 0 stops
@@ -30,11 +31,11 @@ public class Player : MonoBehaviour {
     private void UpdateHorizontalSpeed() {
         int threshold = 100;
 
-        if (attentionScore > 100) {
+        /*if (attentionScore > 100) {
             attentionScore = 100;
-        }
+        }*/
 
-        CurrentSpeed = attentionScore / threshold * 8;
+        CurrentSpeed = attentionScore / threshold * MaxSpeed;
     }
 
 
