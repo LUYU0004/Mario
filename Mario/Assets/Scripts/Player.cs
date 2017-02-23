@@ -9,8 +9,6 @@ public class Player : MonoBehaviour {
     //public float MaxSpeed = 8;  //per second
     public static float attentionScore ;
     public static float attentionLvl;
-    private float threshold;
-    private float thresholdR;
     public static float CurrentSpeed;
     public static float MaxSpeed = 8;
     public float SpeedAccelerationOnGround = 10f;
@@ -22,8 +20,6 @@ public class Player : MonoBehaviour {
         _controller = GetComponent<CharacterController2D>();
         _isFacingRight = transform.localScale.x > 0; //not flipped; localScale==1 if facing right, -1 facing left
         CurrentSpeed = 0;  // MaxSpeed = 8;
-        threshold = 0;
-        thresholdR = 1;
         attentionScore = 0;
         attentionLvl = 0;
         _normalizedHorizontalSpeed = 1;

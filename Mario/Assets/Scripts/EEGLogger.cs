@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading;
 using Emotiv;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEditor;
 //using computeAttention;
 
 
@@ -17,37 +19,48 @@ public class EEGLogger {
     EmoEngine engine;
     
         //(assemblies);
+    public static bool USER_ADDED { get { return (userID > -1); } }
+    private static int instanceCount = 0;
     private static int userID = -1;    
-    private string outputDataFile =  "E:\\luyuhao\\testdata\\RawSignals\\" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private string outputDataFile =  "E:\\luyuhao\\testdata\\Game\\" + "Signals_"+DateTime.Now.ToString("ddMMyyyy") + ".csv";
     private static int bufferSizeLimit = 64;
     private double[][] rawSignals = new double[4][];
 
-    public static bool SetThresholds;
-    private double thresholdR;
-    private double threshold;
+    public static bool ThresholdRSet;
+    public static bool ThresholdSet;
+    private static double thresholdR;
+    private static double threshold;
     private double BTconcentrationLevel;
     private static float startTime;
     private static bool testMode = true;
+   // private static EEGLogger logger;
 
 
     // Use this for initialization
     public EEGLogger() {
+            
+            Debug.Log("EEGLogger!");
+            engine = EmoEngine.Instance;
 
-        engine = EmoEngine.Instance;
+            //Debug.Log(engine);
+            threshold = 0;
+            thresholdR = 0;
+            readCount = 0;
+            ThresholdSet = false;
+            ThresholdRSet = false;
 
-        //Debug.Log(engine);
-        threshold = 0;
-        thresholdR = 0;
-        readCount = 0;
-        SetThresholds = false;
+            for (int i = 0; i < 4; i++)
+            {
+                rawSignals[i] = new double[bufferSizeLimit];
+            }
 
-        for (int i = 0; i < 4; i++) {
-            rawSignals[i] = new double[bufferSizeLimit];
-        }
+            engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded);
+            engine.UserRemoved += new EmoEngine.UserRemovedEventHandler(engine_UserRemoved);
+            engine.Connect();
+            instanceCount++;
+        
 
-        engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded);
-        engine.UserRemoved += new EmoEngine.UserRemovedEventHandler(engine_UserRemoved);
-        engine.Connect();
+
 
 	}
 
@@ -59,12 +72,122 @@ public class EEGLogger {
         engine.DataAcquisitionEnable((uint)userID, true);
         //ask for up to 1s of buffered data
         engine.EE_DataSetBufferSizeInSec(1);
+
     }
 
     void engine_UserRemoved(object sender, EmoEngineEventArgs e)
     {
         Console.WriteLine("Dongle Removed!");
         userID = -1;
+    }
+
+    public static void WaitingForUser()
+    {
+
+        while (userID == -1)
+        {
+            Debug.Log("waiting thread!");
+            Thread.Sleep(1000);
+        }
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public static void SetThresholdR() {
+        Debug.Log("Relax Training Thread Created!");
+
+        EEGLogger logger = new EEGLogger();
+
+        TextWriter file;
+        float attentionSc = -1;
+        int attentionLv = -1;
+
+        string root_path = Environment.CurrentDirectory;
+        string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
+        string dataLocation = path + "\\testdata\\Train\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".txt";
+
+        //set up threshold for attention
+        if (testMode)
+        {
+            logger.setThresholds();
+            //EEGLogger.
+            ThresholdRSet = true;
+           // EEGLogger.
+            //ThresholdSet = true;
+        }
+        else
+        {
+            int counter;
+
+            for (counter = 0; counter < 127; counter++)
+            {
+                if (logger.Run())
+                {
+                    logger.TimeToFrq32();
+                    EEGLogger.thresholdR += logger.CalculateAttention();
+                }
+                counter++;
+            }
+
+            EEGLogger.thresholdR = EEGLogger.thresholdR / 128;
+            Console.WriteLine("thresholdR = " + EEGLogger.thresholdR);
+
+        }
+
+
+        try
+        {
+            file = new StreamWriter(dataLocation, true);
+            file.WriteLine("AttentionScore , AttentionLevel ");
+            file.Close();
+        }
+        catch (Exception e)
+        {
+            Debug.Log("problem writing attention data!");
+            Debug.Log(e);
+        }
+
+
+        while (true)
+        {
+            Thread.Sleep(250);
+
+            if (testMode)
+            {
+                file = new StreamWriter(dataLocation, true);
+                logger.readCount++;
+                attentionSc = (float)logger.generateFakeAttention(); //0-100
+                attentionLv = logger.CalAttensionLevel(attentionSc); ;
+                Player.attentionScore = attentionSc;
+                Player.attentionLvl = attentionLv;
+                Player.UpdateHorizontalSpeed();
+                file.WriteLine(attentionSc + ",  " + attentionLv);
+                file.Close();
+
+            }
+            else
+            {
+                if (userID > -1)
+                {
+
+                    if (logger.Run())
+                    {
+                        file = new StreamWriter(dataLocation, true);
+                        logger.readCount++;
+                        logger.TimeToFrq32();
+                        attentionSc = (float)logger.CalculateAttention();
+                        attentionLv = logger.CalAttensionLevel(attentionSc); ;
+                        Player.attentionScore = attentionSc;
+                        Player.attentionLvl = attentionLv;
+
+                        file.WriteLine(attentionSc + ",  " + attentionLv);
+                        file.Close();
+                        //TODO: Update UI display
+                    }
+                }
+            }
+
+        }
+
     }
 
     public static void OnRetrieveData() {
@@ -80,18 +203,7 @@ public class EEGLogger {
 
         string root_path= Environment.CurrentDirectory;
         string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
-        string dataLocation = path+ "\\testdata\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".txt";
-
-        //set up threshold for attention
-        if (testMode)
-        {
-            logger.setThresholds();
-        }
-        else {
-
-
-        }
-        
+        string dataLocation = path + "\\testdata\\Game\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".csv";
         
         try
         {
@@ -121,7 +233,7 @@ public class EEGLogger {
                 file.Close();
 
             } else {
-                if (userID > 0)
+                if (userID > -1)
                 {
 
                     if (logger.Run())
@@ -157,6 +269,9 @@ public class EEGLogger {
         // If the user has not yet connected, do not proceed
         if ((int)userID == -1)
         {
+            var message = "Please connect your headset first!";
+            var title = "Headset Not Found";
+            EditorUtility.DisplayDialog(title, message, "Get it");
             return false;
         }
         Dictionary<EdkDll.EE_DataChannel_t, double[]> data = engine.GetData((uint)userID);
