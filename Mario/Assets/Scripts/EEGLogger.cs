@@ -32,14 +32,14 @@ public class EEGLogger {
     private static double threshold;
     private double BTconcentrationLevel;
     private static float startTime;
-    private static bool testMode = true;
+    private static bool testMode = false;
    // private static EEGLogger logger;
 
 
     // Use this for initialization
     public EEGLogger() {
             
-            Debug.Log("EEGLogger!");
+            //Debug.Log("EEGLogger!");
             engine = EmoEngine.Instance;
 
             //Debug.Log(engine);
@@ -54,36 +54,62 @@ public class EEGLogger {
                 rawSignals[i] = new double[bufferSizeLimit];
             }
 
-            engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded);
-            engine.UserRemoved += new EmoEngine.UserRemovedEventHandler(engine_UserRemoved);
+        try {
+            engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded_Event);
+            engine.UserRemoved += new EmoEngine.UserRemovedEventHandler(engine_UserRemoved_Event);
             engine.Connect();
-            instanceCount++;
-        
 
+            
+            Debug.Log("engine:"+engine);
+        } catch (Exception e) {
+            Debug.Log(e);
+            Debug.Log("Unable to connect!");
+        }
 
+        //   instanceCount++;
+    }
 
-	}
-
-    void engine_UserAdded(object sender, EmoEngineEventArgs e) {
-        Console.WriteLine("Dongle Plugged!");
+    void engine_UserAdded_Event(object sender, EmoEngineEventArgs e) {
+        Debug.Log("Dongle Plugged!!!!!!!");
         userID = (int)e.userId;
 
         //enable the data aquisition for this user
-        engine.DataAcquisitionEnable((uint)userID, true);
+        // engine.
+        try {
+            int errorCode = EdkDll.EE_DataAcquisitionEnable((uint)userID, true);
+            engine.DataAcquisitionEnable((uint)userID, true);
+            EmoEngine.errorHandler((Int32)errorCode);
+             Debug.Log("errorCode = " + errorCode);
+        } catch (Exception exp) {
+            Debug.Log(exp);
+
+        }
+        // EE_DataAcquisitionIsEnabled(uint userId, out bool pEnableOut);
+        // EdkDll.EE_DataAcquisitionEnable((uint)userID, true);
+        bool result;
+            int code = EdkDll.EE_DataAcquisitionIsEnabled((uint)0, out result);//userID
+        Debug.Log(result);
         //ask for up to 1s of buffered data
         engine.EE_DataSetBufferSizeInSec(1);
+        int num = (int)engine.EngineGetNumUser();
+        Debug.Log("user number = "+num);
 
+        Thread t = Thread.CurrentThread;
+        Debug.Log(t.ThreadState);
+        //t.ThreadState;
+        //t.Start();
     }
 
-    void engine_UserRemoved(object sender, EmoEngineEventArgs e)
+    void engine_UserRemoved_Event(object sender, EmoEngineEventArgs e)
     {
-        Console.WriteLine("Dongle Removed!");
+        Debug.Log("Dongle Removed!");
         userID = -1;
     }
 
     public static void WaitingForUser()
     {
-
+        Debug.Log("Create the waiting thread!");
+        EEGLogger logger = new EEGLogger();
         while (userID == -1)
         {
             Debug.Log("waiting thread!");
@@ -196,7 +222,6 @@ public class EEGLogger {
         
         EEGLogger logger = new EEGLogger();
 
-
         TextWriter file;
         float attentionSc = -1;
         int attentionLv = -1;
@@ -219,9 +244,11 @@ public class EEGLogger {
 
         while (true)
         {
+            Debug.Log("EEG RUNNING!");
             Thread.Sleep(250);
 
             if (testMode) {
+
                 file = new StreamWriter(dataLocation, true);
                 logger.readCount++;
                 attentionSc = (float)logger.generateFakeAttention(); //0-100
@@ -233,8 +260,9 @@ public class EEGLogger {
                 file.Close();
 
             } else {
-                if (userID > -1)
-                {
+                Debug.Log("Real mode: Continue!");
+                //if (userID > -1) { 
+              
 
                     if (logger.Run())
                     {
@@ -250,7 +278,7 @@ public class EEGLogger {
                         file.Close();
                         //TODO: Update UI display
                     }
-                }
+                //}
             }
             
         }
@@ -263,21 +291,26 @@ public class EEGLogger {
      3)Compute attentionScore*/
     private bool Run() {
 
+        Debug.Log(Thread.CurrentThread.Name);
         // Handle any waiting events
         engine.ProcessEvents();
+     
+        bool result = engine.IsDataAcquisitionEnabled((uint)userID);
 
+        Debug.Log(result);
         // If the user has not yet connected, do not proceed
         if ((int)userID == -1)
         {
             var message = "Please connect your headset first!";
             var title = "Headset Not Found";
-            EditorUtility.DisplayDialog(title, message, "Get it");
+            Debug.Log(message);
             return false;
         }
         Dictionary<EdkDll.EE_DataChannel_t, double[]> data = engine.GetData((uint)userID);
 
         if (data == null)
         {
+            Debug.Log("Data = null");
             return false;
         }
 
@@ -285,7 +318,7 @@ public class EEGLogger {
 
         // Write the data to a file
         TextWriter file = new StreamWriter(outputDataFile, true);
-
+        Debug.Log(outputDataFile);      
         //WriteHeader();
         file.WriteLine("COUNTER, INTERPOLATED,RAW_CQ,AF3,F7,F3,FC5,T7,P7,O1,O2,P8,T8,FC6,F4,F8,AF4,GYROX,GYROY,TIMESTAMP,ES_TIMESTAMP,FUNC_ID,FUNC_VALUE,MARKER,SYNC_SIGNAL");
 

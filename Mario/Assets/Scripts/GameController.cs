@@ -50,6 +50,7 @@ public class GameController : MonoBehaviour {
 
         //create a constantly working eeg signal thread
         EEGThread = new Thread(EEGLogger.OnRetrieveData);
+        EEGThread.Name = "EEGThread";
         EEGThread.Start();
     }
 
@@ -63,7 +64,7 @@ public class GameController : MonoBehaviour {
 
     void OnApplicationQuit()
     {
-        //EEGThread.Abort();
+        EEGThread.Abort();
         //EEGThread.Abort();
     }
 

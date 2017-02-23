@@ -9,14 +9,14 @@ public class AutoDestroyParticleSystem: MonoBehaviour
     private ParticleSystem _particleSystem; //TODO: 
 
     public void Start() {
-        _particleSystem = GetComponent<ParticleSystem>();
+        //_particleSystem = GetComponent<ParticleSystem>();
 
     }
 
     public void Update() {
-        if (_particleSystem.isPlaying)
+        if (true)//_particleSystem.isPlaying)
             return;
 
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 }
