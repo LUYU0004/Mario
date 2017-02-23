@@ -22,6 +22,7 @@ public class EEGLogger {
     private static int bufferSizeLimit = 64;
     private double[][] rawSignals = new double[4][];
 
+    public static bool SetThresholds;
     private double thresholdR;
     private double threshold;
     private double BTconcentrationLevel;
@@ -38,6 +39,7 @@ public class EEGLogger {
         threshold = 0;
         thresholdR = 0;
         readCount = 0;
+        SetThresholds = false;
 
         for (int i = 0; i < 4; i++) {
             rawSignals[i] = new double[bufferSizeLimit];
@@ -71,16 +73,25 @@ public class EEGLogger {
         
         EEGLogger logger = new EEGLogger();
 
-        //set up threshold for attention
-        logger.setThresholds();
 
-            TextWriter file;
+        TextWriter file;
         float attentionSc = -1;
         int attentionLv = -1;
 
         string root_path= Environment.CurrentDirectory;
         string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
         string dataLocation = path+ "\\testdata\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".txt";
+
+        //set up threshold for attention
+        if (testMode)
+        {
+            logger.setThresholds();
+        }
+        else {
+
+
+        }
+        
         
         try
         {

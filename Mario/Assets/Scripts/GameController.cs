@@ -10,14 +10,15 @@ using UnityEngine;
      */
 public class GameController : MonoBehaviour {
 
-    private enum GameModes : byte { pre = 1, relax, attentionLow, attentionHigh, gamePlaying};
-    private int gameMode = 0;
+   // private enum GameModes : byte { pre = 1, relax, attentionLow, attentionHigh, gamePlaying};
+    //private int gameMode = 0;
+    
     private static int score;
     private float lifeRemaining = 5;
     private float startTime;
-    public string textTime; //added this member variable here so we can access it through other scripts
+    private string textTime; //added this member variable here so we can access it through other scripts
 
-    EEGLogger logger;
+    //EEGLogger logger;
     Thread EEGThread; //constant running thread to read eeg data
     Player player;
 
@@ -49,7 +50,6 @@ public class GameController : MonoBehaviour {
 
         //create a constantly working eeg signal thread
         EEGThread = new Thread(EEGLogger.OnRetrieveData);
-        gameMode = 5;
         EEGThread.Start();
     }
 

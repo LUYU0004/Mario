@@ -14,7 +14,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - Platforms
   - 
   - 
   - 
@@ -39,15 +39,21 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Default
-    uniqueID: 0
-    locked: 0
   - name: Background
     uniqueID: 803448095
     locked: 0
-  - name: Tiles
+  - name: Mountains
     uniqueID: 3196953885
+    locked: 0
+  - name: Treeline
+    uniqueID: 3013545437
+    locked: 0
+  - name: Foreground
+    uniqueID: 3722575567
     locked: 0
   - name: Player
     uniqueID: 3947204461
+    locked: 0
+  - name: Default
+    uniqueID: 0
     locked: 0
