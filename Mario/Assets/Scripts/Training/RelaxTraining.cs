@@ -21,7 +21,15 @@ public class RelaxTraining : MonoBehaviour {
         GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), BackgroundTexture);
 
         //TODO: play music
-        //TODO: thread to collect data and compute threshold relax
-    
+        //TODO: thread to collect data and compute threshold relax 
+    }
+
+    void OnExit() {
+        EEGThread.Abort();
+        SceneManager.LoadScene("TrainMenu");
+    }
+
+    void OnApplicationQuit() {
+        EEGThread.Abort();
     }
 }

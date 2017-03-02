@@ -19,9 +19,10 @@ public class TrainMenuController : MonoBehaviour {
         if (GUI.Button(new Rect(Screen.width * .4f, Screen.height * .3f, Screen.width * .2f, Screen.height * .1f), "Relax"))
         {
             print("Start Relaxing!");
-
+            SceneManager.LoadScene("RelaxTraining");
+            //RelaxTraining relaxTrain = new RelaxTraining();
             // In a function
-           // SceneManager.LoadScene("Game");
+            // SceneManager.LoadScene("Game");
         }
 
         if (GUI.Button(new Rect(Screen.width * .4f, Screen.height * .5f, Screen.width * .2f, Screen.height * .1f), "Focus"))

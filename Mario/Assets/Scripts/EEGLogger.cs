@@ -5,34 +5,35 @@ using System.Threading;
 using Emotiv;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEditor;
-using SampEn;
+//using UnityEditor;
+//using SampEn;
+using MathWorks.MATLAB.NET.Arrays;
 //using Microsoft.VisualBasic.FileIO;
 //using computeAttention;
 
 
 public class EEGLogger {
 
-   //[DllImport("edk")]
+    //[DllImport("edk")]
     //public static extern void EDK_cleanup();
 
     public int readCount;
 
     EmoEngine engine;
-    
-        //(assemblies);
+
+    //(assemblies);
     public static bool USER_ADDED { get { return (userID > -1); } }
     private static int instanceCount = 0;
     private static int userID = -1;
     private static string root_path = Directory.GetParent(Environment.CurrentDirectory).ToString();
-    private static string trainR_root_path = root_path+"\\testdata\\Train\\";
+    private static string trainR_root_path = root_path + "\\testdata\\Train\\";
     private static string trainF_root_path = root_path + "\\testdata\\Train\\";
-    private static string game_root_path= root_path + "\\testdata\\Game\\";
-    private string trainRSignalFile = trainR_root_path + "Signals_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
-    private string trainRAttentFile = trainR_root_path + "Attent_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
-    private string trainFSignalFile = trainR_root_path + "Signals_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
-    private string trainFAttentFile = trainR_root_path + "Attent_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
-    private static string gameSignalFile = game_root_path + "Signals_"+DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private static string game_root_path = root_path + "\\testdata\\Game\\";
+    //private string trainRSignalFile = trainR_root_path + "Signals_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private static string trainRAttentFile = trainR_root_path + "Attent_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    //private string trainFSignalFile = trainR_root_path + "Signals_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private static string trainFAttentFile = trainR_root_path + "Attent_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
+    private static string gameSignalFile = game_root_path + "Signals_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
     private static string gameAttentFile = game_root_path + "Attent_" + DateTime.Now.ToString("ddMMyyyy") + ".csv";
     private static int bufferSizeLimit = 64;
     private double[][] rawSignals = new double[4][];
@@ -44,26 +45,26 @@ public class EEGLogger {
     private double BTconcentrationLevel;
     private static float startTime;
     private static bool testMode = true;
-   // private static EEGLogger logger;
+    // private static EEGLogger logger;
 
 
     // Use this for initialization
     public EEGLogger() {
-            
-            //Debug.Log("EEGLogger!");
-            engine = EmoEngine.Instance;
 
-            //Debug.Log(engine);
-            threshold = 0;
-            thresholdR = 0;
-            readCount = 0;
-            ThresholdSet = false;
-            ThresholdRSet = false;
+        //Debug.Log("EEGLogger!");
+        engine = EmoEngine.Instance;
 
-            for (int i = 0; i < 4; i++)
-            {
-                rawSignals[i] = new double[bufferSizeLimit];
-            }
+        //Debug.Log(engine);
+        threshold = 0;
+        thresholdR = 0;
+        readCount = 0;
+        ThresholdSet = false;
+        ThresholdRSet = false;
+
+        for (int i = 0; i < 4; i++)
+        {
+            rawSignals[i] = new double[bufferSizeLimit];
+        }
 
         try {
             engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded_Event);
@@ -95,7 +96,7 @@ public class EEGLogger {
     void engine_UserAdded_Event(object sender, EmoEngineEventArgs e) {
         //Thread t = Thread.CurrentThread;
         //Debug.Log(t.Name + t.ThreadState);
-       // t.Suspend();
+        // t.Suspend();
         //t.Yield();// Suspend();
         Debug.Log("Dongle Plugged!!!!!!!");
         userID = (int)e.userId;
@@ -111,14 +112,14 @@ public class EEGLogger {
 
             //[DllImport("edk.dll", EntryPoint = "EE_DataAcquisitionEnable")]
             // static extern Int32 Unmanaged_EE_DataAcquisitionEnable(UInt32 userId, Boolean enable);
-}
+        }
         catch (Exception exp)
         {
             Debug.Log("error");
             Debug.Log(exp);
         }
 
-        
+
         try {
 
             bool result;
@@ -145,7 +146,7 @@ public class EEGLogger {
         //ask for up to 1s of buffered data
         engine.EE_DataSetBufferSizeInSec(1);
         int num = (int)engine.EngineGetNumUser();
-        Debug.Log("user number = "+num);
+        Debug.Log("user number = " + num);
 
     }
 
@@ -171,104 +172,115 @@ public class EEGLogger {
         Debug.Log("Relax Training Thread Created!");
 
         EEGLogger logger = new EEGLogger();
-
+        
         TextWriter file;
         float attentionSc = -1;
-        int attentionLv = -1;
-
-
-        string dataLocation = trainR_root_path;
+        string dataLocation = EEGLogger.trainRAttentFile;
+        file = new StreamWriter(dataLocation, true);
 
         //set up threshold for attention
-        if (testMode)
-        {
-            logger.setThresholds();
-            //EEGLogger.
-            ThresholdRSet = true;
-           // EEGLogger.
-            //ThresholdSet = true;
-        }
-        else
-        {
-            int counter;
+        //if (testMode){
+        //logger.setFakeThresholds();
+        //EEGLogger.
 
+        // EEGLogger.
+        //ThresholdSet = true;
+        //}
+        //else
+        //{
+        int counter;
+
+        if (userID > -1)
+        {
             for (counter = 0; counter < 127; counter++)
             {
                 if (logger.Run())
                 {
                     logger.TimeToFrq32();
-                    EEGLogger.thresholdR += logger.CalculateAttention();
+                    attentionSc += logger.CalculateAttention();
+                    file.WriteLine(attentionSc);
                 }
                 counter++;
                 Thread.Sleep(250);
             }
-
-            EEGLogger.thresholdR = EEGLogger.thresholdR / 128;
-            Console.WriteLine("thresholdR = " + EEGLogger.thresholdR);
-
-        }
-
-
-        try
-        {
-            file = new StreamWriter(dataLocation, true);
-            file.WriteLine("AttentionScore , AttentionLevel ");
             file.Close();
+        }else {
+            Debug.Log("No user! Can not compute thresholdR!");
         }
-        catch (Exception e)
-        {
-            Debug.Log("problem writing attention data!");
-            Debug.Log(e);
-        }
+       
 
+        //    if (userID > -1)
+        //    {
 
-        while (true)
-        {
-            Thread.Sleep(250);
+        //        if (logger.Run())
+        //        {
+        //            file = new StreamWriter(dataLocation, true);
+        //            logger.readCount++;
+        //            logger.TimeToFrq32();
+        //            attentionSc = (float)logger.CalculateAttention();
+        //            attentionLv = logger.CalAttensionLevel(attentionSc); ;
+        //            Player.attentionScore = attentionSc;
+        //            Player.attentionLvl = attentionLv;
 
-            if (testMode)
-            {
-                file = new StreamWriter(dataLocation, true);
-                logger.readCount++;
-                attentionSc = (float)logger.generateFakeAttention(); //0-100
-                attentionLv = logger.CalAttensionLevel(attentionSc); ;
-                Player.attentionScore = attentionSc;
-                Player.attentionLvl = attentionLv;
-                Player.UpdateHorizontalSpeed();
-                file.WriteLine(attentionSc + ",  " + attentionLv);
-                file.Close();
+        //            file.WriteLine(attentionSc + ",  " + attentionLv);
+        //            file.Close();
+        //            //TODO: Update UI display
+        //        }
+        //    }
 
-            }
-            else
-            {
-                if (userID > -1)
-                {
+        EEGLogger.thresholdR = attentionSc / 128;
+        Console.WriteLine("thresholdR = " + EEGLogger.thresholdR);
 
-                    if (logger.Run())
-                    {
-                        file = new StreamWriter(dataLocation, true);
-                        logger.readCount++;
-                        logger.TimeToFrq32();
-                        attentionSc = (float)logger.CalculateAttention();
-                        attentionLv = logger.CalAttensionLevel(attentionSc); ;
-                        Player.attentionScore = attentionSc;
-                        Player.attentionLvl = attentionLv;
+        //}
+        file.Close();
+        ThresholdRSet = true;
+        Debug.Log("thresholdR set!");
+        //GameObject relaxController = GetComponent<RelaxTraining>();
+    
+    //while (true)
+    //{
+    //    Thread.Sleep(250);
 
-                        file.WriteLine(attentionSc + ",  " + attentionLv);
-                        file.Close();
-                        //TODO: Update UI display
-                    }
-                }
-            }
+    //    //if (testMode){
+    //    file = new StreamWriter(dataLocation, true);
+    //    logger.readCount++;
+    //    attentionSc = (float)logger.generateFakeAttention(); //0-100
+    //    attentionLv = logger.CalAttensionLevel(attentionSc); ;
+    //    Player.attentionScore = attentionSc;
+    //    Player.attentionLvl = attentionLv;
+    //    Player.UpdateHorizontalSpeed();
+    //    file.WriteLine(attentionSc + ",  " + attentionLv);
+    //    file.Close();
 
-        }
+    //    //}else{
+    //    if (userID > -1)
+    //    {
 
-    }
+    //        if (logger.Run())
+    //        {
+    //            file = new StreamWriter(dataLocation, true);
+    //            logger.readCount++;
+    //            logger.TimeToFrq32();
+    //            attentionSc = (float)logger.CalculateAttention();
+    //            attentionLv = logger.CalAttensionLevel(attentionSc); ;
+    //            Player.attentionScore = attentionSc;
+    //            Player.attentionLvl = attentionLv;
+
+    //            file.WriteLine(attentionSc + ",  " + attentionLv);
+    //            file.Close();
+    //            //TODO: Update UI display
+    //        }
+    //    }
+    //}
+
+    //   }
+
+}
 
     public static void OnRetrieveData() {
 
         Debug.Log("OnRetrieveData Thread Created!");
-        
+
         EEGLogger logger = new EEGLogger();
 
         TextWriter file;
@@ -278,7 +290,7 @@ public class EEGLogger {
         //string root_path= Environment.CurrentDirectory;
         //string path = Directory.GetParent(root_path).ToString();//Directory.GetCurrentDirectory()//.Parent
         string dataLocation = EEGLogger.gameAttentFile;//path + "\\testdata\\Game\\" + DateTime.Now.ToString(@"yyyyddMM_HHmm") + ".csv";
-        
+
         try
         {
             file = new StreamWriter(dataLocation, true);
@@ -291,91 +303,129 @@ public class EEGLogger {
         }
 
         file = new StreamWriter(dataLocation, true);
-        int linecnt = 0;
-        if (testMode) {
-            //TODO: load edf signal data file
-            //Save the file 
-            string fileName = root_path + "\\testdata\\signals_1.csv";
-            Debug.Log(fileName);
+        //if (testMode) {
+        //TODO: load edf signal data file
+        //Save the file 
+        string fileName = root_path + "\\testdata\\signals_2.csv";
+        Debug.Log(fileName);
 
-            try
-            {
-                var fs = File.OpenRead(fileName);//using ()
-            }
-            catch (Exception e) {
-                Debug.Log(e);
-            }
-
-            
-            float[,] signalHolder = new float[320, 4];
-            try
-            {
-                var reader = new StreamReader(File.OpenRead(fileName));//using ()
-                
-
-                while (linecnt < 320)//!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    var values = line.Split(',');
-                    signalHolder[linecnt, 0] = float.Parse(values[0]);
-                    signalHolder[linecnt, 0] = float.Parse(values[0]);
-                    signalHolder[linecnt, 0] = float.Parse(values[0]);
-                    signalHolder[linecnt, 0] = float.Parse(values[0]);
-                    Debug.Log(linecnt);
-                    linecnt++;
-
-                }
-            }
-            catch (Exception e) {
-                Debug.Log(e);
-            }  
+        try
+        {
+            var fs = File.OpenRead(fileName);//using ()
+        }
+        catch (Exception e) {
+            Debug.Log(e);
         }
 
-        linecnt = 0;
+
+        double[] AF3 = new double[320];
+        double[] O1 = new double[320];
+        double[] O2 = new double[320];
+        double[] AF4 = new double[320];
+
+        try
+        {
+
+
+        } catch (Exception e) {
+            Debug.Log(e);
+        }
+        var reader = new StreamReader(File.OpenRead(fileName));
+        var line = reader.ReadLine();
+        var values = line.Split(',');
+        Array.Copy(values, AF3, 320);
+
+        line = reader.ReadLine();
+        values = line.Split(',');
+        Array.Copy(values, O1, 320);
+
+        line = reader.ReadLine();
+        values = line.Split(',');
+        Array.Copy(values, O2, 320);
+
+        line = reader.ReadLine();
+        values = line.Split(',');
+        Array.Copy(values, AF4, 320);
+
+        //}//end if
+
+
+
+        int readcount = 0;
         while (true)
         {
             Debug.Log("EEG RUNNING!");
 
-            if (testMode) {
+            //if (testMode) {
+            double[] eeg = new double[32];
+            Array.Copy(AF4, 32 * (readcount % 10), eeg, 0, 32); //Array.Copy(data, index, result, 0, length);;
+                                                                //attention_sc += SampEn(2, 0.25 * std(eeg), eeg);
+                                                                //end
+            MWNumericArray a = new MWNumericArray(1, 32, (double[])eeg);
+            //SampEnClass sampClass = new SampEnClass();//(float)logger.generateFakeAttention(); //0-100
+            double std_value = logger.StandDeviation(eeg);
+            //sampClass.SampEn(2, 0.25 * std_value, a);
+                //attentionLv = logger.CalAttensionLevel(attentionSc); ;
 
-                logger.readCount++;
-                For eachChannel = 1:4
-eeg = EEG(ich,:);
-                SamEntropyValue(ich) = SampEn(2, 0.25 * std(eeg), eeg);
-                end
-                                attentionSc = SampEn.SampEnClass(2)//(float)logger.generateFakeAttention(); //0-100
-                attentionLv = logger.CalAttensionLevel(attentionSc); ;
-                Player.attentionScore = attentionSc;
-                Player.attentionLvl = attentionLv;
-                Player.UpdateHorizontalSpeed();
-                file.WriteLine(attentionSc + ",  " + attentionLv);
-                file.Close();
 
-            } else {
-                Debug.Log("Real mode: Continue!");
-                //if (userID > -1) { 
+            Player.attentionScore = attentionSc;
+            Player.attentionLvl = attentionLv;
+            Player.UpdateHorizontalSpeed();
+            file.WriteLine(attentionSc + ",  " + attentionLv);
+            file.Close();
 
-                if (logger.Run())
-                    {
-                        //file = new StreamWriter(dataLocation, true);
-                        logger.readCount++;
-                        logger.TimeToFrq32();
-                        attentionSc = (float)logger.CalculateAttention();
-                        attentionLv = logger.CalAttensionLevel(attentionSc); ;
-                        Player.attentionScore = attentionSc;
-                        Player.attentionLvl = attentionLv;
+            //}
+            //else
+            //{
+            //    Debug.Log("Real mode: Continue!");
+            //    if (userID > -1)
+            //    {
 
-                        file.WriteLine(attentionSc + ",  " + attentionLv);
-                        file.Close();
-                        //TODO: Update UI display
-                    }
-                //}
-            }
+            //        if (logger.Run())
+            //        {
+            //            file = new StreamWriter(dataLocation, true);
+            //            logger.readCount++;
+            //            logger.TimeToFrq32();
+            //            attentionSc = (float)logger.CalculateAttention();
+            //            attentionLv = logger.CalAttensionLevel(attentionSc); ;
+            //            Player.attentionScore = attentionSc;
+            //            Player.attentionLvl = attentionLv;
+
+            //            file.WriteLine(attentionSc + ",  " + attentionLv);
+            //            file.Close();
+            //            TODO: Update UI display
+            //        }
+            //}
+            //}//end if/else
 
             Thread.Sleep(250);
-
         }
-        
+    }//end while
+
+      
+    
+
+    private double StandDeviation(double[] array)
+    {
+        int arrayLength = array.Length;
+        double sum = 0;
+
+        for (int i = 0; i < arrayLength; i++)
+        {
+            sum += array[i];
+        }
+        double average = sum / arrayLength;
+        double sumOfSquaresOfDifferences = 0;
+        double dif;
+        for (int i = 0; i < array.Length; i++)
+        {
+            dif = array[i] - average;
+            sumOfSquaresOfDifferences += dif * dif;
+        }
+
+        double sd = Math.Sqrt(sumOfSquaresOfDifferences / arrayLength);
+
+        return sd;
     }
 
 
@@ -449,7 +499,7 @@ eeg = EEG(ich,:);
         int result = rnd.Next(0, 100);
         return result;
     }
-    private void setThresholds() {
+    private void setFakeThresholds() {
 
         /*int counter;
 
@@ -507,9 +557,9 @@ eeg = EEG(ich,:);
         alpha = alpha / 4;
 
         beta = rawSignals[0][7] + rawSignals[0][8] + rawSignals[0][9] + rawSignals[0][10] +
-                rawSignals[1][7] + rawSignals[1][8] + rawSignals[1][9] + rawSignals[0][10] +
-                rawSignals[2][7] + rawSignals[2][8] + rawSignals[2][9] + rawSignals[0][10] +
-                rawSignals[3][7] + rawSignals[3][8] + rawSignals[3][9];
+                rawSignals[1][7] + rawSignals[1][8] + rawSignals[1][9] + rawSignals[1][10] +
+                rawSignals[2][7] + rawSignals[2][8] + rawSignals[2][9] + rawSignals[2][10] +
+                rawSignals[3][7] + rawSignals[3][8] + rawSignals[3][9] + rawSignals[3][10];
 
         beta = beta / 4;
         // concentrationLevel in dB
