@@ -1,13 +1,15 @@
 ﻿using System.IO;
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using Emotiv;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-//using UnityEditor;
-//using SampEn;
+using UnityEditor;
+using SampEn;
 using MathWorks.MATLAB.NET.Arrays;
+using MathWorks.MATLAB.NET.Utility;
 //using Microsoft.VisualBasic.FileIO;
 //using computeAttention;
 
@@ -168,6 +170,12 @@ public class EEGLogger {
         SceneManager.LoadScene("MainMenu");
     }
 
+
+    double[] AF3 = new double[320];
+    double[] O1 = new double[320];
+    double[] O2 = new double[320];
+    double[] AF4 = new double[320];
+
     public static void SetThresholdR() {
         Debug.Log("Relax Training Thread Created!");
 
@@ -188,25 +196,84 @@ public class EEGLogger {
         //}
         //else
         //{
-        int counter;
 
-        if (userID > -1)
+        if (testMode)
         {
-            for (counter = 0; counter < 127; counter++)
+            string fileName = root_path + "\\testdata\\signals_2.csv";
+            Debug.Log(fileName);
+
+            
+            //read line by line
+            try
             {
-                if (logger.Run())
+                var reader = new StreamReader(File.OpenRead(fileName));
+                var line = reader.ReadLine();
+                var values = line.Split(',');
+                var temp = values.Select(x => Double.Parse(x)).OrderBy(x => x).ToArray();
+                Array.Copy(temp, 0, logger.AF3, 0, 320);
+                Debug.Log(logger.AF3);
+                //Array.Copy(values, logger.AF3, 320);
+
+                //line = reader.ReadLine();
+                //values = line.Split(',');
+                //Array.Copy(values, logger.O1, 320);
+
+                //line = reader.ReadLine();
+                //values = line.Split(',');
+                //Array.Copy(values, logger.O2, 320);
+
+                //line = reader.ReadLine();
+                //values = line.Split(',');
+                //Array.Copy(values, logger.AF4, 320);
+            }
+            catch (Exception e) {
+                Debug.Log(e);
+            }
+           // var reader = new StreamReader(File.OpenRead(fileName));
+
+
+            //compute attentionScores
+            Debug.Log("EEG RUNNING!");
+            int counter = 0;
+            for (counter = 0; counter < 5; counter++)
+            {
+                Debug.Log(counter);
+                try
                 {
-                    logger.TimeToFrq32();
-                    attentionSc += logger.CalculateAttention();
-                    file.WriteLine(attentionSc);
+                    double attenScore = logger.FakeRun(counter);
                 }
+                catch(Exception e) {
+                    Debug.Log(e);
+                }
+                
                 counter++;
                 Thread.Sleep(250);
             }
-            file.Close();
-        }else {
-            Debug.Log("No user! Can not compute thresholdR!");
         }
+        else
+        {
+            int counter;
+
+            if (userID > -1)
+            {
+                for (counter = 0; counter < 127; counter++)
+                {
+                    if (logger.Run())
+                    {
+                        logger.TimeToFrq32();
+                        attentionSc += logger.CalculateAttention();
+                        file.WriteLine(attentionSc);
+                    }
+                    Thread.Sleep(250);
+                }
+                file.Close();
+            }
+            else
+            {
+                Debug.Log("No user! Can not compute thresholdR!");
+            }
+        }
+
        
 
         //    if (userID > -1)
@@ -276,6 +343,32 @@ public class EEGLogger {
     //   }
 
 }
+    // private bool Run() { }
+    public double FakeRun(int readcount) {
+        //bool getSamples = false;
+
+        
+        //if (testMode) {
+        double[] eeg = new double[32];
+        Array.Copy(AF4, 32 * (readcount % 10), eeg, 0, 32);
+
+        try {
+
+            MWArray[] sampResults = null;
+            MWArray attenScore = null;
+            MWNumericArray a = new MWNumericArray(1, 32, (double[])eeg);
+            //SampEnClass sampClass = new SampEnClass();//(float)logger.generateFakeAttention(); //0-100
+            //double std_value = StandDeviation(eeg);
+            //sampResults = sampClass.SampEn(2, 0.25 * std_value, a);
+            //attenScore = sampResults[0];
+            //Debug.Log(attenScore);
+        } catch (Exception e) { Debug.Log(e); }
+       
+
+        return 0;
+    }
+
+
 
     public static void OnRetrieveData() {
 
@@ -304,54 +397,21 @@ public class EEGLogger {
 
         file = new StreamWriter(dataLocation, true);
         //if (testMode) {
-        //TODO: load edf signal data file
-        //Save the file 
-        string fileName = root_path + "\\testdata\\signals_2.csv";
-        Debug.Log(fileName);
-
-        try
-        {
-            var fs = File.OpenRead(fileName);//using ()
-        }
-        catch (Exception e) {
-            Debug.Log(e);
-        }
-
+       
 
         double[] AF3 = new double[320];
         double[] O1 = new double[320];
         double[] O2 = new double[320];
         double[] AF4 = new double[320];
 
-        try
-        {
-
-
-        } catch (Exception e) {
-            Debug.Log(e);
-        }
-        var reader = new StreamReader(File.OpenRead(fileName));
-        var line = reader.ReadLine();
-        var values = line.Split(',');
-        Array.Copy(values, AF3, 320);
-
-        line = reader.ReadLine();
-        values = line.Split(',');
-        Array.Copy(values, O1, 320);
-
-        line = reader.ReadLine();
-        values = line.Split(',');
-        Array.Copy(values, O2, 320);
-
-        line = reader.ReadLine();
-        values = line.Split(',');
-        Array.Copy(values, AF4, 320);
+       
 
         //}//end if
 
 
 
         int readcount = 0;
+
         while (true)
         {
             Debug.Log("EEG RUNNING!");
@@ -362,9 +422,12 @@ public class EEGLogger {
                                                                 //attention_sc += SampEn(2, 0.25 * std(eeg), eeg);
                                                                 //end
             MWNumericArray a = new MWNumericArray(1, 32, (double[])eeg);
-            //SampEnClass sampClass = new SampEnClass();//(float)logger.generateFakeAttention(); //0-100
+            SampEnClass sampClass = new SampEnClass();//(float)logger.generateFakeAttention(); //0-100
             double std_value = logger.StandDeviation(eeg);
-            //sampClass.SampEn(2, 0.25 * std_value, a);
+            //sampResults = sampClass.SampEn(2, 0.25 * std_value, a);
+            //attenScore = sampResults[0];
+            //Debug.Log(attenScore);
+
                 //attentionLv = logger.CalAttensionLevel(attentionSc); ;
 
 

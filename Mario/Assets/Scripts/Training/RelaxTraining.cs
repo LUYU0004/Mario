@@ -13,6 +13,7 @@ public class RelaxTraining : MonoBehaviour {
         //create a constantly working eeg signal thread
         EEGThread = new Thread(EEGLogger.SetThresholdR);
         EEGThread.Start();
+        Debug.Log("Start relax training@!");
     }
 
     void OnGUI()
