@@ -5,11 +5,10 @@ using System.Collections.Generic;
 using System.Threading;
 using Emotiv;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+//using UnityEngine.SceneManagement;
 using UnityEditor;
 using SampEn;
 using MathWorks.MATLAB.NET.Arrays;
-using MathWorks.MATLAB.NET.Utility;
 //using Microsoft.VisualBasic.FileIO;
 //using computeAttention;
 
@@ -167,7 +166,8 @@ public class EEGLogger {
             Debug.Log("waiting thread!");
             Thread.Sleep(1000);
         }
-        SceneManager.LoadScene("MainMenu");
+        //SceneManager.LoadScene("MainMenu");
+        Application.LoadLevel("MainMenu");
     }
 
 

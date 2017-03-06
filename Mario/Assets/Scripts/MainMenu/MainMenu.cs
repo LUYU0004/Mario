@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.SceneManagement;
+//using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour {
 
@@ -36,7 +36,7 @@ public class MainMenu : MonoBehaviour {
             if (EEGLogger.ThresholdSet && EEGLogger.ThresholdRSet)
             {
                 print("Start Gaming!");
-                SceneManager.LoadScene("Game");
+                Application.LoadLevel("Game");//SceneManager.LoadScene("Game");
             }
             else {
 
@@ -49,7 +49,7 @@ public class MainMenu : MonoBehaviour {
         if (GUI.Button(new Rect(Screen.width * .4f, Screen.height * .5f, Screen.width * .2f, Screen.height * .1f), "Train"))
         {
             print("Start Training!");
-            SceneManager.LoadScene("TrainMenu");
+            Application.LoadLevel("TrainMenu");//SceneManager.LoadScene("TrainMenu");
 
         }
 

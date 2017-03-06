@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+
 
 public class RelaxTraining : MonoBehaviour {
 
@@ -27,7 +27,7 @@ public class RelaxTraining : MonoBehaviour {
 
     void OnExit() {
         EEGThread.Abort();
-        SceneManager.LoadScene("TrainMenu");
+        Application.LoadLevel("TrainMenu");//SceneManager.LoadScene("TrainMenu");
     }
 
     void OnApplicationQuit() {

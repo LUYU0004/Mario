@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+
 
 public class TrainMenuController : MonoBehaviour {
 
@@ -19,7 +19,7 @@ public class TrainMenuController : MonoBehaviour {
         if (GUI.Button(new Rect(Screen.width * .4f, Screen.height * .3f, Screen.width * .2f, Screen.height * .1f), "Relax"))
         {
             print("Start Relaxing!");
-            SceneManager.LoadScene("RelaxTraining");
+            Application.LoadLevel("RelaxTraining");
             //RelaxTraining relaxTrain = new RelaxTraining();
             // In a function
             // SceneManager.LoadScene("Game");
